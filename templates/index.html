@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartChurn AI | Enterprise Retention Platform</title>
+    
+    <!-- Tailwind CSS Setup -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js & jsPDF -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; }
+        
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        
+        /* Transition all basic elements */
+        * { transition: border-color 0.2s ease, background-color 0.2s ease; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- ================= LOGIN SCREEN ================= -->
+    <div id="loginView" class="min-h-screen flex items-center justify-center p-4 fade-in">
+        <div class="glass-panel max-w-md w-full rounded-2xl p-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-500 to-purple-600"></div>
+            <i class="fas fa-chart-pie text-5xl text-brand-600 dark:text-brand-400 mb-4 inline-block"></i>
+            <h1 class="text-3xl font-bold mb-2">SmartChurn AI</h1>
+            <p class="text-gray-500 dark:text-gray-400 mb-8 text-sm">Enterprise Customer Retention Platform</p>
+            
+            <form id="loginForm" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Email Address</label>
+                    <input type="email" required value="admin@smartchurn.ai" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" required value="password123" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
+                    Sign In to Dashboard <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </form>
+            <p class="mt-6 text-xs text-gray-400"> Designed by Dhanaraj</p>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP (HIDDEN INITIALLY) ================= -->
+    <div id="appView" class="hidden flex-col min-h-screen">
+        
+        <!-- Navbar -->
+        <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-gradient-to-br from-brand-500 to-purple-600 text-white p-2 rounded-lg">
+                            <i class="fas fa-chart-line text-xl"></i>
+                        </div>
+                        <span class="font-bold text-xl tracking-tight hidden sm:block">SmartChurn AI</span>
+                    </div>
+                    
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex space-x-1 border border-gray-100 dark:border-gray-700 p-1 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                        <button onclick="navigate('dashboard')" id="nav-dashboard" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400">Dashboard</button>
+                        <button onclick="navigate('predict')" id="nav-predict" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 dark:text-gray-300 hover:text-brand-600">Predict</button>
+                        <button onclick="navigate('history')" id="nav-history" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 dark:text-gray-300 hover:text-brand-600">History</button>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center space-x-4">
+                        <button onclick="toggleTheme()" class="text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i id="themeIcon" class="fas fa-moon text-lg"></i>
+                        </button>
+                        <div class="h-8 w-8 rounded-full bg-gradient-to-r from-purple-400 to-brand-500 flex items-center justify-center text-white font-bold text-sm shadow-md border-2 border-white dark:border-gray-800">
+                            DAL
+                        </div>
+                        <button onclick="logout()" class="text-sm text-red-500 hover:text-red-700 font-medium hidden sm:block">Logout</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Menu -->
+            <div class="md:hidden flex justify-around p-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <button onclick="navigate('dashboard')" class="text-xs flex flex-col items-center p-2 text-brand-600"><i class="fas fa-home mb-1 text-lg"></i> Dash</button>
+                <button onclick="navigate('predict')" class="text-xs flex flex-col items-center p-2 text-gray-500 dark:text-gray-400"><i class="fas fa-magic mb-1 text-lg"></i> Predict</button>
+                <button onclick="navigate('history')" class="text-xs flex flex-col items-center p-2 text-gray-500 dark:text-gray-400"><i class="fas fa-history mb-1 text-lg"></i> History</button>
+            </div>
+        </nav>
+
+        <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+            
+            <!-- ================= DASHBOARD VIEW ================= -->
+            <div id="view-dashboard" class="fade-in space-y-6">
+                <!-- Hero Section -->
+                <div class="glass-panel rounded-2xl p-8 border-l-4 border-brand-500 bg-gradient-to-r from-white to-brand-50 dark:from-gray-800 dark:to-gray-800/80">
+                    <h1 class="text-3xl font-bold mb-2">Welcome.</h1>
+                    <p class="text-gray-500 dark:text-gray-400">Here is the overview of your customer retention metrics for this month.</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="glass-panel rounded-xl p-6 flex items-center justify-between">
+                        <div><p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Analyzed</p><h3 id="statTotal" class="text-2xl font-bold mt-1">12</h3></div>
+                        <div class="bg-blue-100 text-blue-600 p-3 rounded-full text-xl"><i class="fas fa-users"></i></div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-6 flex items-center justify-between">
+                        <div><p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Retained Customers</p><h3 id="statRetained" class="text-2xl font-bold mt-1 text-green-600">8</h3></div>
+                        <div class="bg-green-100 text-green-600 p-3 rounded-full text-xl"><i class="fas fa-shield-alt"></i></div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-6 flex items-center justify-between">
+                        <div><p class="text-sm text-gray-500 dark:text-gray-400 font-medium">High Risk (Churn)</p><h3 id="statChurned" class="text-2xl font-bold mt-1 text-red-600">4</h3></div>
+                        <div class="bg-red-100 text-red-600 p-3 rounded-full text-xl"><i class="fas fa-exclamation-triangle"></i></div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-6 flex items-center justify-between">
+                        <div><p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Retention Rate</p><h3 id="statRate" class="text-2xl font-bold mt-1 text-brand-600">66.7%</h3></div>
+                        <div class="bg-brand-100 text-brand-600 p-3 rounded-full text-xl"><i class="fas fa-chart-pie"></i></div>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 glass-panel rounded-2xl p-6 h-96 flex flex-col">
+                        <h3 class="text-lg font-bold mb-4">Risk Distribution Chart</h3>
+                        <div class="flex-grow relative w-full h-full flex justify-center">
+                            <canvas id="churnChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-6 overflow-hidden">
+                        <h3 class="text-lg font-bold mb-4">Recent Alerts</h3>
+                        <div id="recentAlerts" class="space-y-4">
+                            <!-- Populated by JS -->
+                        </div>
+                        <button onclick="navigate('predict')" class="w-full mt-6 bg-brand-50 hover:bg-brand-100 dark:bg-gray-700 dark:hover:bg-gray-600 text-brand-600 dark:text-brand-400 font-medium py-2 rounded-lg transition-colors border border-brand-200 dark:border-gray-600">
+                            Run New Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= PREDICT VIEW ================= -->
+            <div id="view-predict" class="hidden fade-in">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <!-- Form -->
+                    <div class="xl:col-span-2 space-y-6">
+                        <div class="glass-panel rounded-2xl overflow-hidden border-t-4 border-t-brand-500">
+                            <div class="border-b border-gray-100 dark:border-gray-700 px-6 py-5 flex justify-between items-center bg-white/50 dark:bg-gray-800/50">
+                                <div>
+                                    <h2 class="text-xl font-bold flex items-center"><i class="fas fa-robot text-brand-500 mr-3"></i> AI Prediction Engine</h2>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Input complete customer telemetry to calculate churn probability via Random Forest Model.</p>
+                                </div>
+                                <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Live API Link</span>
+                            </div>
+                            
+                            <form id="churnForm" class="p-6 space-y-6">
+                                <!-- Demographics -->
+                                <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 flex items-center"><i class="fas fa-user mr-2"></i> Demographics</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                        <div class="md:col-span-1">
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Customer ID</label>
+                                            <input type="text" name="customerID" value="CUST-8492" required class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Gender</label>
+                                            <select name="gender" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                                <option>Male</option><option>Female</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Senior Citizen</label>
+                                            <select name="SeniorCitizen" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                                <option value="0">No</option><option value="1">Yes</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Partner</label>
+                                            <select name="Partner" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                                <option>No</option><option>Yes</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Dependents</label>
+                                            <select name="Dependents" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                                <option>No</option><option>Yes</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Account & Billing -->
+                                <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 flex items-center"><i class="fas fa-file-invoice-dollar mr-2"></i> Account & Billing</h3>
+                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Tenure (Months)</label>
+                                            <input type="number" name="tenure" value="12" min="0" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Contract Type</label>
+                                            <select name="Contract" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                                <option value="Month-to-month">Month-to-month</option>
+                                                <option value="One year">One year</option>
+                                                <option value="Two year">Two year</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Paperless Billing</label>
+                                            <select name="PaperlessBilling" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                                <option>Yes</option><option>No</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Payment Method</label>
+                                            <select name="PaymentMethod" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                                <option value="Electronic check">Electronic check</option>
+                                                <option value="Mailed check">Mailed check</option>
+                                                <option value="Credit card (automatic)">Credit card (automatic)</option>
+                                                <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Monthly Charges ($)</label>
+                                            <input type="number" step="0.01" name="MonthlyCharges" value="85.50" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Total Charges ($)</label>
+                                            <input type="number" step="0.01" name="TotalCharges" value="1026.00" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Services -->
+                                <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 flex items-center"><i class="fas fa-wifi mr-2"></i> Subscribed Services</h3>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Phone Service</label>
+                                            <select name="PhoneService" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>Yes</option><option>No</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Multiple Lines</label>
+                                            <select name="MultipleLines" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>No</option><option>Yes</option><option>No phone service</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Internet Service</label>
+                                            <select name="InternetService" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>Fiber optic</option><option>DSL</option><option>No</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Online Security</label>
+                                            <select name="OnlineSecurity" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>No</option><option>Yes</option><option>No internet service</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Online Backup</label>
+                                            <select name="OnlineBackup" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>No</option><option>Yes</option><option>No internet service</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Device Protection</label>
+                                            <select name="DeviceProtection" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>No</option><option>Yes</option><option>No internet service</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Tech Support</label>
+                                            <select name="TechSupport" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>No</option><option>Yes</option><option>No internet service</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Streaming TV</label>
+                                            <select name="StreamingTV" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>Yes</option><option>No</option><option>No internet service</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium mb-1 text-gray-500">Streaming Movies</label>
+                                            <select name="StreamingMovies" class="w-full rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-1.5 text-sm outline-none"><option>Yes</option><option>No</option><option>No internet service</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-md text-base font-bold text-white bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-all transform hover:scale-[1.01]">
+                                    <i class="fas fa-microchip mr-2"></i> Execute Analysis
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Results Panel -->
+                    <div class="xl:col-span-1">
+                        <div class="glass-panel rounded-2xl shadow-xl p-6 sticky top-24 flex flex-col min-h-[500px]" id="resultCard">
+                            
+                            <!-- Initial -->
+                            <div id="initialState" class="flex-grow flex flex-col items-center justify-center text-center text-gray-400">
+                                <div class="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-6">
+                                    <i class="fas fa-satellite-dish text-4xl opacity-50"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-600 dark:text-gray-300">Awaiting Telemetry</h3>
+                                <p class="text-sm mt-2 max-w-[200px] mx-auto">Fill the parameters and execute analysis to query the remote AI model.</p>
+                            </div>
+
+                            <!-- Loading -->
+                            <div id="loadingState" class="hidden flex-grow flex flex-col items-center justify-center text-center w-full">
+                                <i class="fas fa-circle-notch fa-spin text-5xl text-brand-500 mb-6"></i>
+                                <h3 class="font-bold text-lg mb-2">Analyzing Data Points...</h3>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-2 overflow-hidden">
+                                    <div id="progressBar" class="bg-brand-500 h-2.5 rounded-full" style="width: 0%; transition: width 0.2s linear;"></div>
+                                </div>
+                                <p id="loadingText" class="text-xs text-gray-500">Connecting to Backend API...</p>
+                            </div>
+
+                            <!-- Error State -->
+                            <div id="errorState" class="hidden flex-grow flex flex-col items-center justify-center text-center text-gray-400">
+                                <i class="fas fa-exclamation-triangle text-4xl mb-4 text-orange-500"></i>
+                                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Server Unavailable</h3>
+                                <p id="errorMessage" class="text-sm mt-2 max-w-[250px] mx-auto text-red-500 font-medium">Failed to connect.</p>
+                                <button type="button" onclick="resetForm()" class="mt-6 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg text-sm font-bold transition-colors">Reset</button>
+                            </div>
+
+                            <!-- Result -->
+                            <div id="resultState" class="hidden flex-grow flex flex-col w-full relative">
+                                <button onclick="downloadReport()" class="absolute top-0 right-0 text-gray-400 hover:text-brand-500 transition-colors" title="Export PDF">
+                                    <i class="fas fa-file-pdf text-xl"></i>
+                                </button>
+                                
+                                <div class="text-center mt-2 mb-6 relative">
+                                    <div id="churnIcon" class="text-6xl mb-4 transform scale-110"></div>
+                                    <h2 id="churnStatus" class="text-3xl font-black mb-1 tracking-tight"></h2>
+                                    <p id="churnMessage" class="text-sm font-medium"></p>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm mb-6 relative overflow-hidden">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-brand-400 to-purple-500"></div>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Calculated Risk Factor</span>
+                                        <span id="probValue" class="text-2xl font-black text-gray-800 dark:text-white"></span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3 mb-1">
+                                        <div id="probBar" class="h-3 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                                    </div>
+                                    <p id="confidenceText" class="text-[10px] text-gray-400 text-right mt-1">Confidence Score: 94.2%</p>
+                                </div>
+                                
+                                <div class="flex-grow bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+                                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center"><i class="fas fa-tasks mr-2 text-brand-500"></i> AI Action Plan</h4>
+                                    <div id="actionPlan" class="space-y-3">
+                                        <!-- Injected dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= HISTORY VIEW ================= -->
+            <div id="view-history" class="hidden fade-in">
+                <div class="glass-panel rounded-2xl overflow-hidden flex flex-col">
+                    <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold"><i class="fas fa-history text-brand-500 mr-2"></i> Prediction Log</h2>
+                            <p class="text-sm text-gray-500 mt-1">Historical log of all analyzed customer profiles.</p>
+                        </div>
+                        <button class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg transition-all duration-300 flex items-center gap-2">
+                            <i class="fas fa-robot"></i>
+                            AI Monitor
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date/Time</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Risk Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // State Management
+        const state = {
+            isDark: false,
+            history: [
+                // Dummy Initial Data for Dashboard
+                { id: 'CUST-1001', risk: 0.85, date: new Date(Date.now() - 86400000).toLocaleString(), isChurn: true },
+                { id: 'CUST-1002', risk: 0.12, date: new Date(Date.now() - 172800000).toLocaleString(), isChurn: false },
+                { id: 'CUST-1003', risk: 0.92, date: new Date(Date.now() - 259200000).toLocaleString(), isChurn: true },
+                { id: 'CUST-1004', risk: 0.24, date: new Date(Date.now() - 345600000).toLocaleString(), isChurn: false }
+            ],
+            chartInstance: null,
+            latestPrediction: null
+        };
+
+        // Initialize Theme
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            toggleTheme(true);
+        }
+
+        function toggleTheme(forceDark = null) {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            
+            if (forceDark === true || (!html.classList.contains('dark') && forceDark !== false)) {
+                html.classList.add('dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                state.isDark = true;
+            } else {
+                html.classList.remove('dark');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                state.isDark = false;
+            }
+            if(state.chartInstance) updateChart(); // Re-render chart colors
+        }
+
+        // Authentication Mock
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('loginView').style.display = 'none';
+            document.getElementById('appView').classList.remove('hidden');
+            document.getElementById('appView').classList.add('flex');
+            navigate('dashboard');
+            updateDashboardStats();
+        });
+
+        function logout() {
+            document.getElementById('appView').classList.add('hidden');
+            document.getElementById('appView').classList.remove('flex');
+            document.getElementById('loginView').style.display = 'flex';
+        }
+
+        // Routing System
+        function navigate(view) {
+            ['dashboard', 'predict', 'history'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                document.getElementById(`nav-${v}`)?.classList.remove('bg-white', 'dark:bg-gray-700', 'shadow-sm', 'text-brand-600', 'dark:text-brand-400');
+                document.getElementById(`nav-${v}`)?.classList.add('text-gray-600', 'dark:text-gray-300');
+            });
+            
+            document.getElementById(`view-${view}`).classList.remove('hidden');
+            document.getElementById(`nav-${view}`)?.classList.add('bg-white', 'dark:bg-gray-700', 'shadow-sm', 'text-brand-600', 'dark:text-brand-400');
+            document.getElementById(`nav-${view}`)?.classList.remove('text-gray-600', 'dark:text-gray-300');
+
+            if (view === 'dashboard') updateDashboardStats();
+            if (view === 'history') renderHistoryTable();
+        }
+
+        function resetForm() {
+            document.getElementById('errorState').classList.add('hidden');
+            document.getElementById('resultState').classList.add('hidden');
+            document.getElementById('initialState').classList.remove('hidden');
+            document.getElementById('initialState').classList.add('flex');
+        }
+
+        // AI Engine Request (Strictly ML Model only)
+        async function runPredictionModel(data) {
+            // Connect to the Flask Backend API
+            const response = await fetch('http://localhost:5000/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (!response.ok) {
+                // If the backend returns a 400 or 500 error, capture it
+                const errorResponse = await response.json().catch(() => ({}));
+                throw new Error(errorResponse.error || `Server Error (${response.status}): Make sure your Python Flask backend is running.`);
+            }
+            
+            return await response.json();
+        }
+
+        // Handle Form Submission
+        document.getElementById('churnForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // UI Transition
+            document.getElementById('initialState').classList.add('hidden');
+            document.getElementById('resultState').classList.add('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+            
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('loadingState').classList.add('flex');
+            
+            // Progress Bar Animation
+            const pb = document.getElementById('progressBar');
+            const lt = document.getElementById('loadingText');
+            pb.style.width = '0%';
+            setTimeout(() => { pb.style.width = '40%'; lt.innerText = "Extracting Features..."; }, 400);
+            setTimeout(() => { pb.style.width = '80%'; lt.innerText = "Querying Live API / Running Weights..."; }, 1200);
+            
+            try {
+                // This will fail entirely if the Python server isn't running
+                const result = await runPredictionModel(data);
+                
+                pb.style.width = '100%';
+                setTimeout(() => {
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('loadingState').classList.remove('flex');
+                    showResult(result, data);
+                    
+                    // Save to history
+                    const record = {
+                        id: data.customerID,
+                        risk: result.churn_probability,
+                        date: new Date().toLocaleString(),
+                        isChurn: result.churn_prediction
+                    };
+                    state.history.unshift(record);
+                    state.latestPrediction = { ...record, data }; // for PDF export
+                }, 500);
+
+            } catch (error) {
+                // Handle actual ML API connection failure
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('loadingState').classList.remove('flex');
+                
+                document.getElementById('errorState').classList.remove('hidden');
+                document.getElementById('errorState').classList.add('flex');
+                document.getElementById('errorMessage').innerText = error.message;
+            }
+        });
+
+        function showResult(result, rawData) {
+            document.getElementById('resultState').classList.remove('hidden');
+            
+            const probability = result.churn_probability;
+            const isChurn = result.churn_prediction;
+            
+            const probPercent = (probability * 100).toFixed(1);
+            document.getElementById('probValue').innerText = probPercent + '%';
+            
+            // Update confidence text
+            if (result.confidence) {
+                document.getElementById('confidenceText').innerText = `Confidence Score: ${(result.confidence * 100).toFixed(1)}%`;
+            }
+            
+            const probBar = document.getElementById('probBar');
+            setTimeout(() => { probBar.style.width = probPercent + '%'; }, 100);
+            
+            const icon = document.getElementById('churnIcon');
+            const status = document.getElementById('churnStatus');
+            const message = document.getElementById('churnMessage');
+            const actionPlan = document.getElementById('actionPlan');
+            
+            if (isChurn) {
+                icon.innerHTML = '<div class="text-red-500 drop-shadow-md"><i class="fas fa-exclamation-circle animate-pulse"></i></div>';
+                status.innerText = "High Risk";
+                status.className = "text-4xl font-black mb-1 tracking-tight text-red-600 dark:text-red-500";
+                probBar.className = "h-3 rounded-full transition-all duration-1000 bg-gradient-to-r from-red-500 to-red-600";
+                message.innerText = "Customer exhibits critical churn indicators.";
+                message.className = "text-sm font-medium text-red-500/80";
+                
+                actionPlan.innerHTML = `
+                    <div class="flex items-start bg-white dark:bg-gray-800 p-3 rounded-lg border border-red-100 dark:border-red-900/30">
+                        <i class="fas fa-bullseye text-red-500 mt-1 mr-3"></i>
+                        <div><p class="text-sm font-bold text-gray-800 dark:text-gray-200">Immediate Retention Call</p><p class="text-xs text-gray-500">Assign to senior retention agent within 24hrs.</p></div>
+                    </div>
+                    <div class="flex items-start bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                        <i class="fas fa-percentage text-brand-500 mt-1 mr-3"></i>
+                        <div><p class="text-sm font-bold text-gray-800 dark:text-gray-200">Offer Annual Discount</p><p class="text-xs text-gray-500">Provide 20% off to move off Month-to-Month contract.</p></div>
+                    </div>
+                    <div class="flex items-start bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                        <i class="fas fa-headset text-brand-500 mt-1 mr-3"></i>
+                        <div><p class="text-sm font-bold text-gray-800 dark:text-gray-200">Free Tech Support Add-on</p><p class="text-xs text-gray-500">Comp 3 months of Tech Support to improve experience.</p></div>
+                    </div>
+                `;
+            } else {
+                icon.innerHTML = '<div class="text-green-500 drop-shadow-md"><i class="fas fa-shield-check"></i></div>';
+                status.innerText = "Safe Account";
+                status.className = "text-4xl font-black mb-1 tracking-tight text-green-600 dark:text-green-500";
+                probBar.className = "h-3 rounded-full transition-all duration-1000 bg-gradient-to-r from-green-400 to-green-600";
+                message.innerText = "Customer metrics indicate strong loyalty.";
+                message.className = "text-sm font-medium text-green-600/80";
+                
+                actionPlan.innerHTML = `
+                    <div class="flex items-start bg-white dark:bg-gray-800 p-3 rounded-lg border border-green-100 dark:border-green-900/30">
+                        <i class="fas fa-arrow-up text-green-500 mt-1 mr-3"></i>
+                        <div><p class="text-sm font-bold text-gray-800 dark:text-gray-200">Upsell Opportunity</p><p class="text-xs text-gray-500">Prime candidate for premium package upgrade.</p></div>
+                    </div>
+                    <div class="flex items-start bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                        <i class="fas fa-share-alt text-brand-500 mt-1 mr-3"></i>
+                        <div><p class="text-sm font-bold text-gray-800 dark:text-gray-200">Referral Program</p><p class="text-xs text-gray-500">Send automated email for 'Refer a Friend' bonus.</p></div>
+                    </div>
+                `;
+            }
+        }
+
+        // PDF Export Engine
+        function downloadReport() {
+            if(!state.latestPrediction) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const data = state.latestPrediction;
+            const dStr = data.date;
+            
+            // Header
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22);
+            doc.setTextColor(79, 70, 229); // Brand color
+            doc.text("SmartChurn AI Report", 20, 20);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${dStr}`, 20, 28);
+            doc.line(20, 32, 190, 32);
+
+            // Details
+            doc.setFontSize(14);
+            doc.setTextColor(20);
+            doc.text(`Customer ID: ${data.id}`, 20, 45);
+            
+            doc.setFontSize(12);
+            doc.text("Risk Assessment:", 20, 60);
+            doc.setFont("helvetica", "bold");
+            if(data.isChurn) {
+                doc.setTextColor(220, 38, 38);
+                doc.text(`HIGH RISK (${(data.risk*100).toFixed(1)}% Churn Probability)`, 60, 60);
+            } else {
+                doc.setTextColor(22, 163, 74);
+                doc.text(`SAFE (${(data.risk*100).toFixed(1)}% Churn Probability)`, 60, 60);
+            }
+
+            // Raw Data
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(50);
+            doc.setFontSize(11);
+            let y = 80;
+            doc.text("Profile Telemetry used for prediction:", 20, y);
+            y += 10;
+            
+            for (const [key, value] of Object.entries(data.data)) {
+                if(key === 'customerID') continue;
+                doc.text(`${key}:`, 20, y);
+                doc.setFont("helvetica", "bold");
+                doc.text(`${value}`, 80, y);
+                doc.setFont("helvetica", "normal");
+                y += 8;
+                
+                // Add new page if y goes off bounds
+                if (y > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+            }
+
+            doc.save(`ChurnReport_${data.id}.pdf`);
+        }
+
+        // Dashboard Analytics Engine
+        function updateDashboardStats() {
+            const total = state.history.length;
+            const churned = state.history.filter(h => h.isChurn).length;
+            const retained = total - churned;
+            const rate = total > 0 ? ((retained / total) * 100).toFixed(1) : 0;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statRetained').innerText = retained;
+            document.getElementById('statChurned').innerText = churned;
+            document.getElementById('statRate').innerText = rate + '%';
+
+            updateChart(churned, retained);
+            
+            // Update Recent Alerts
+            const alertsDiv = document.getElementById('recentAlerts');
+            alertsDiv.innerHTML = state.history.slice(0,3).map(h => `
+                <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 rounded-full ${h.isChurn ? 'bg-red-500' : 'bg-green-500'} mr-3"></div>
+                        <div><p class="text-sm font-bold">${h.id}</p><p class="text-[10px] text-gray-500">${h.date.split(',')[0]}</p></div>
+                    </div>
+                    <span class="text-xs font-bold px-2 py-1 rounded ${h.isChurn ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${(h.risk*100).toFixed(0)}% Risk</span>
+                </div>
+            `).join('');
+        }
+
+        function updateChart(churnedData = null, retainedData = null) {
+            if(!document.getElementById('view-dashboard').classList.contains('hidden')){
+                const ctx = document.getElementById('churnChart').getContext('2d');
+                
+                // Fetch dynamic values if not passed
+                if(churnedData === null) {
+                   churnedData = state.history.filter(h => h.isChurn).length;
+                   retainedData = state.history.length - churnedData;
+                }
+
+                const textColor = state.isDark ? '#e2e8f0' : '#475569';
+                
+                if (state.chartInstance) state.chartInstance.destroy();
+                
+                state.chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['High Risk (Churn)', 'Retained (Safe)'],
+                        datasets: [{
+                            data: [churnedData, retainedData],
+                            backgroundColor: ['#ef4444', '#10b981'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: textColor, font: { family: 'Inter' } } }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        }
+
+        // History Table Renderer
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = state.history.map(record => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${record.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${record.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <span class="text-sm font-medium mr-2">${(record.risk * 100).toFixed(1)}%</span>
+                            <div class="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5"><div class="h-1.5 rounded-full ${record.isChurn ? 'bg-red-500' : 'bg-green-500'}" style="width: ${(record.risk * 100)}%"></div></div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${record.isChurn ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'}">
+                            ${record.isChurn ? 'Churn Risk' : 'Retained'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
