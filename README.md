@@ -38,4 +38,3 @@ Engineered features from customer tenure, billing, and service usage data.
 
 Deployed a real-time Flask web application for instant churn risk assessment.
 
-Would you like me to help you write the specific Python code for `app.py` to connect your `model.pkl` and `index.html` file?
