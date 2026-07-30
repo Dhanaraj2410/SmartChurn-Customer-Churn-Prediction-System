@@ -24,6 +24,7 @@ An AI-powered Machine Learning web application designed to predict whether a cus
 6.  **Web Deployment:** Serving the model via a Flask web application.
 
 ## 🤖 Algorithm
+
 **Random Forest Classifier**
 
 The system uses an ensemble learning method that constructs a multitude of decision trees at training time. It analyzes complex customer behavior patterns and outputs the mode of the classes (churn or stay) of the individual trees, providing a highly accurate and stable prediction.
