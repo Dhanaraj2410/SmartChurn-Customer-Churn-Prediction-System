@@ -1,7 +1,3 @@
-Here is a professional, highly polished GitHub README file for your project. You can copy and paste this directly into the `README.md` file in your repository to make a great impression on recruiters and developers.
-
-***
-
 # SmartChurn – Customer Churn Prediction System
 
 An AI-powered Machine Learning web application designed to predict whether a customer is likely to leave a service. By analyzing customer behavior and service usage patterns, this system identifies high-risk customers, enabling businesses to take proactive measures and improve customer retention.
