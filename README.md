@@ -2,6 +2,7 @@
 
 An AI-powered Machine Learning web application designed to predict whether a customer is likely to leave a service. By analyzing customer behavior and service usage patterns, this system identifies high-risk customers, enabling businesses to take proactive measures and improve customer retention.
 
+
 ## ✨ Features 
 * **Machine Learning Prediction:** Accurate customer churn forecasting.
 * **Random Forest Model:** Utilizes a robust classification algorithm for high accuracy.
