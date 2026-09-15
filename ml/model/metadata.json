@@ -1,0 +1,41 @@
+{
+  "model_name": "Random Forest Classifier",
+  "version": "v1.0-RF",
+  "accuracy": 0.7934705464868701,
+  "precision": 0.6406779661016949,
+  "recall": 0.5053475935828877,
+  "f1_score": 0.5650224215246636,
+  "roc_auc": 0.8354052029243845,
+  "num_features": 19,
+  "features": [
+    "gender",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "tenure",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod",
+    "MonthlyCharges",
+    "TotalCharges"
+  ],
+  "confusion_matrix": [
+    [
+      929,
+      106
+    ],
+    [
+      185,
+      189
+    ]
+  ]
+}
