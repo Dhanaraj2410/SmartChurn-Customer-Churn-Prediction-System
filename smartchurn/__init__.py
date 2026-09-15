@@ -1,0 +1,1 @@
+# SmartChurn Django Project
