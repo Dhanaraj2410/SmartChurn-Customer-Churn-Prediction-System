@@ -1,0 +1,88 @@
+/* SmartChurn Enterprise Custom CSS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.dark .glass-panel {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.35s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+/* Risk Badges */
+.badge-risk-high {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+.dark .badge-risk-high {
+    background-color: rgba(127, 29, 29, 0.4);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-risk-medium {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+.dark .badge-risk-medium {
+    background-color: rgba(120, 53, 15, 0.4);
+    color: #fde68a;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-risk-low {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+.dark .badge-risk-low {
+    background-color: rgba(20, 83, 45, 0.4);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
