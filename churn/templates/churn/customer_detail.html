@@ -1,0 +1,112 @@
+{% extends 'churn/base.html' %}
+
+{% block title %}Customer {{ customer.customer_id }} | SmartChurn AI{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 fade-in">
+    <div class="flex items-center justify-between">
+        <a href="{% url 'customers' %}" class="text-sm font-bold text-gray-500 hover:text-brand-600 flex items-center space-x-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Customers</span>
+        </a>
+        <div class="space-x-2">
+            <a href="{% url 'customer_update' customer.customer_id %}" class="px-4 py-2 bg-brand-600 text-white font-bold rounded-xl text-sm hover:bg-brand-700 transition-colors">
+                <i class="fas fa-edit mr-1"></i> Edit Profile
+            </a>
+            <a href="{% url 'customer_delete' customer.customer_id %}" class="px-4 py-2 bg-red-100 text-red-700 font-bold rounded-xl text-sm hover:bg-red-200 transition-colors">
+                <i class="fas fa-trash-alt mr-1"></i> Delete
+            </a>
+        </div>
+    </div>
+
+    <!-- Customer Overview Header -->
+    <div class="glass-panel rounded-2xl p-6 border-l-4 border-brand-500 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <div class="w-14 h-14 bg-gradient-to-br from-brand-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md">
+                <i class="fas fa-id-badge"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Customer {{ customer.customer_id }}</h1>
+                <p class="text-xs text-gray-400 mt-1">Added on {{ customer.created_at|date:"M d, Y" }}</p>
+            </div>
+        </div>
+
+        {% if latest_pred %}
+        <div class="text-right">
+            <span class="text-xs font-bold text-gray-400 block uppercase">Latest Risk Status</span>
+            <span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-black uppercase {% if latest_pred.risk_level == 'High' %}badge-risk-high{% elif latest_pred.risk_level == 'Medium' %}badge-risk-medium{% else %}badge-risk-low{% endif %}">
+                {{ latest_pred.risk_level }} Risk ({% widthratio latest_pred.churn_probability 1 100 %}%)
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Detailed Telemetry Grid -->
+    <div class="glass-panel rounded-2xl p-6 space-y-6">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 dark:border-gray-700 pb-3">
+            <i class="fas fa-database text-brand-500 mr-2"></i> Telemetry Parameters
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Gender</span>
+                <span class="font-bold text-sm">{{ customer.gender }}</span>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Senior Citizen</span>
+                <span class="font-bold text-sm">{% if customer.senior_citizen %}Yes{% else %}No{% endif %}</span>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Tenure</span>
+                <span class="font-bold text-sm">{{ customer.tenure }} Months</span>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Contract</span>
+                <span class="font-bold text-sm">{{ customer.contract }}</span>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Internet Service</span>
+                <span class="font-bold text-sm">{{ customer.internet_service }}</span>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Payment Method</span>
+                <span class="font-bold text-sm">{{ customer.payment_method }}</span>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Monthly Charges</span>
+                <span class="font-bold text-sm text-green-600">${{ customer.monthly_charges|floatformat:2 }}</span>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                <span class="text-gray-400 block">Total Charges</span>
+                <span class="font-bold text-sm text-green-600">${{ customer.total_charges|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction Timeline -->
+    <div class="glass-panel rounded-2xl p-6">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4">
+            <i class="fas fa-history text-purple-500 mr-2"></i> ML Prediction History Log
+        </h3>
+
+        <div class="space-y-3">
+            {% for pred in predictions %}
+            <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                <div>
+                    <span class="text-xs font-bold text-gray-900 dark:text-white">{{ pred.prediction_date|date:"M d, Y H:i" }}</span>
+                    <span class="text-[10px] text-gray-400 block">{{ pred.model_version }}</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm font-extrabold px-3 py-1 rounded-full {% if pred.risk_level == 'High' %}badge-risk-high{% elif pred.risk_level == 'Medium' %}badge-risk-medium{% else %}badge-risk-low{% endif %}">
+                        {{ pred.risk_level }} Risk ({% widthratio pred.churn_probability 1 100 %}%)
+                    </span>
+                    <a href="{% url 'result_detail' pred.id %}" class="text-brand-600 hover:text-brand-800 font-bold text-xs">View Report <i class="fas fa-chevron-right ml-1"></i></a>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-xs text-gray-400 py-4 text-center">No predictions registered for this customer yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

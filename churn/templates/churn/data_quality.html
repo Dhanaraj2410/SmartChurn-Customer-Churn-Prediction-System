@@ -1,0 +1,87 @@
+{% extends 'churn/base.html' %}
+
+{% block title %}Data Quality Diagnostics | SmartChurn AI{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 fade-in">
+
+    <!-- Header -->
+    <div class="glass-panel rounded-2xl p-6 border-l-4 border-teal-500 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold flex items-center">
+                <i class="fas fa-stethoscope text-teal-500 mr-3"></i> Dataset Health & Quality Diagnostics
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Programmatic evaluation of data completeness, schema integrity, duplicate rows, and missing values.
+            </p>
+        </div>
+        <div class="text-right">
+            <span class="text-xs font-bold text-gray-400 block uppercase">Overall Quality Score</span>
+            <span class="text-3xl font-black text-teal-600 dark:text-teal-400">{{ quality.quality_score }}%</span>
+        </div>
+    </div>
+
+    <!-- Diagnostic Cards Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+        <div class="glass-panel rounded-2xl p-4">
+            <span class="text-[10px] font-bold text-gray-400 uppercase block">Total Dataset Rows</span>
+            <span class="text-2xl font-black text-gray-900 dark:text-white mt-1 block">{{ quality.total_rows }}</span>
+        </div>
+        <div class="glass-panel rounded-2xl p-4">
+            <span class="text-[10px] font-bold text-gray-400 uppercase block">Columns</span>
+            <span class="text-2xl font-black text-gray-900 dark:text-white mt-1 block">{{ quality.total_cols }}</span>
+        </div>
+        <div class="glass-panel rounded-2xl p-4">
+            <span class="text-[10px] font-bold text-gray-400 uppercase block">Missing Values</span>
+            <span class="text-2xl font-black {% if quality.missing_count > 0 %}text-amber-500{% else %}text-emerald-500{% endif %} mt-1 block">{{ quality.missing_count }}</span>
+        </div>
+        <div class="glass-panel rounded-2xl p-4">
+            <span class="text-[10px] font-bold text-gray-400 uppercase block">Duplicate Rows</span>
+            <span class="text-2xl font-black {% if quality.duplicate_count > 0 %}text-red-500{% else %}text-emerald-500{% endif %} mt-1 block">{{ quality.duplicate_count }}</span>
+        </div>
+    </div>
+
+    <!-- Column Inspection Table -->
+    <div class="glass-panel rounded-2xl overflow-hidden shadow-sm p-6">
+        <h3 class="text-base font-bold mb-4 flex items-center">
+            <i class="fas fa-table text-teal-500 mr-2"></i> Column Telemetry Inspection
+        </h3>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
+                <thead class="bg-gray-50 dark:bg-gray-900/60 font-bold uppercase text-gray-500">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Column Name</th>
+                        <th class="px-4 py-3 text-left">Data Type</th>
+                        <th class="px-4 py-3 text-left">Missing Values</th>
+                        <th class="px-4 py-3 text-left">Unique Values</th>
+                        <th class="px-4 py-3 text-right">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
+                    {% for col, info in quality.column_summary.items %}
+                    <tr>
+                        <td class="px-4 py-3 font-bold text-gray-900 dark:text-white">{{ col }}</td>
+                        <td class="px-4 py-3 text-gray-500 font-mono">{{ info.dtype }}</td>
+                        <td class="px-4 py-3 font-semibold {% if info.missing > 0 %}text-amber-500{% else %}text-emerald-600{% endif %}">{{ info.missing }}</td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ info.unique }}</td>
+                        <td class="px-4 py-3 text-right">
+                            {% if info.missing == 0 %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Healthy</span>
+                            {% else %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Missing Data</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-400">No database telemetry available yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

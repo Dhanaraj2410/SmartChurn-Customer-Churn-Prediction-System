@@ -1,0 +1,188 @@
+{% extends 'churn/base.html' %}
+
+{% block title %}Prediction Result | Customer {{ result.customer_id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 fade-in">
+
+    <!-- Top Action Bar -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'predict' %}" class="text-sm font-bold text-gray-500 hover:text-brand-600 transition-colors flex items-center space-x-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>Run Another Analysis</span>
+        </a>
+        
+        <button onclick="exportResultPDF()" type="button" class="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center space-x-2 text-sm">
+            <i class="fas fa-file-pdf"></i>
+            <span>Export PDF Report</span>
+        </button>
+    </div>
+
+    <!-- Main Result Card -->
+    <div class="glass-panel rounded-3xl p-8 shadow-2xl border-t-8 {% if result.risk_level == 'High' %}border-t-red-500{% elif result.risk_level == 'Medium' %}border-t-amber-500{% else %}border-t-emerald-500{% endif %} relative overflow-hidden">
+        
+        <!-- Header Banner -->
+        <div class="text-center pb-8 border-b border-gray-100 dark:border-gray-700/80">
+            <div class="inline-flex p-4 rounded-full mb-4 {% if result.risk_level == 'High' %}bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300{% elif result.risk_level == 'Medium' %}bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300{% else %}bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300{% endif %} shadow-inner">
+                <i class="fas {% if result.risk_level == 'High' %}fa-exclamation-triangle animate-bounce{% elif result.risk_level == 'Medium' %}fa-exclamation-circle{% else %}fa-shield-check{% endif %} text-4xl"></i>
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-gray-900 dark:text-white">
+                Customer {{ result.customer_id }}
+            </h1>
+            
+            <div class="mt-2 inline-flex items-center space-x-2 px-4 py-1.5 rounded-full text-sm font-black uppercase tracking-wider {% if result.risk_level == 'High' %}badge-risk-high{% elif result.risk_level == 'Medium' %}badge-risk-medium{% else %}badge-risk-low{% endif %}">
+                <span>{{ result.risk_level }} CHURN RISK</span>
+            </div>
+
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-2">
+                {% if result.is_churn %}
+                Customer exhibits critical indicators correlated with subscription cancellation.
+                {% else %}
+                Customer profile demonstrates high account stability and brand loyalty.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Metrics Gauge & Bar -->
+        <div class="py-8 grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-gray-100 dark:border-gray-700/80">
+            <!-- Churn Probability Metric -->
+            <div class="bg-gray-50 dark:bg-gray-800/60 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Churn Probability</span>
+                    <span class="text-3xl font-black text-gray-900 dark:text-white">{{ result.churn_percentage }}%</span>
+                </div>
+                
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden mb-2">
+                    <div class="h-4 rounded-full transition-all duration-1000 {% if result.risk_level == 'High' %}bg-gradient-to-r from-red-500 to-rose-600{% elif result.risk_level == 'Medium' %}bg-gradient-to-r from-amber-400 to-amber-600{% else %}bg-gradient-to-r from-emerald-400 to-emerald-600{% endif %}" style="width: {{ result.churn_percentage }}%;"></div>
+                </div>
+
+                <div class="flex justify-between text-[11px] font-bold text-gray-400">
+                    <span>0% (Safe)</span>
+                    <span>30% (Low)</span>
+                    <span>60% (Medium)</span>
+                    <span>100% (High Risk)</span>
+                </div>
+            </div>
+
+            <!-- Model Confidence Score -->
+            <div class="bg-gray-50 dark:bg-gray-800/60 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Model Confidence Score</span>
+                    <h3 class="text-3xl font-black text-brand-600 dark:text-brand-400 mt-1">{{ result.confidence }}%</h3>
+                </div>
+                <p class="text-xs text-gray-400">
+                    Determined by Random Forest Classifier ensemble tree decision variance.
+                </p>
+            </div>
+        </div>
+
+        <!-- Risk Factors & Action Plan Grid -->
+        <div class="pt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Key Contributing Risk Factors -->
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center">
+                    <i class="fas fa-search-nodes text-brand-500 mr-2"></i> Key Contributing Factors
+                </h3>
+
+                <ul class="space-y-3">
+                    {% for factor in result.key_factors %}
+                    <li class="flex items-start p-3.5 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 text-sm shadow-sm">
+                        <i class="fas fa-circle-dot text-brand-500 mt-1 mr-3 text-xs"></i>
+                        <span class="font-semibold text-gray-800 dark:text-gray-200">{{ factor }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="p-3 bg-gray-50 text-gray-400 text-xs rounded-lg">No risk anomaly factors identified.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Recommended Retention Action Plan -->
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center">
+                    <i class="fas fa-tasks text-emerald-500 mr-2"></i> Recommended Retention Action Plan
+                </h3>
+
+                <div class="space-y-3">
+                    {% for rec in result.recommendations %}
+                    <div class="p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-start space-x-3">
+                        <div class="p-2.5 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-xl">
+                            <i class="{{ rec.icon }} text-lg"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-bold text-gray-900 dark:text-white">{{ rec.action }}</h4>
+                                <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                    {{ rec.priority }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{{ rec.reason }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-xs text-gray-400">Account stable. No immediate retention intervention needed.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportResultPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(79, 70, 229); // Brand color
+    doc.text("SmartChurn AI - Retention Report", 20, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 28);
+    doc.line(20, 32, 190, 32);
+
+    doc.setFontSize(14);
+    doc.setTextColor(20);
+    doc.text(`Customer ID: {{ result.customer_id }}`, 20, 45);
+
+    doc.setFontSize(12);
+    doc.text("Risk Assessment:", 20, 58);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor({% if result.risk_level == 'High' %}220, 38, 38{% elif result.risk_level == 'Medium' %}217, 119, 6{% else %}22, 163, 74{% endif %});
+    doc.text("{{ result.risk_level }} Risk ({{ result.churn_percentage }}% Churn Probability)", 65, 58);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(50);
+    doc.setFontSize(11);
+
+    let y = 75;
+    doc.text("Key Risk Drivers:", 20, y);
+    y += 8;
+
+    {% for factor in result.key_factors %}
+    doc.text(`- {{ factor }}`, 25, y);
+    y += 7;
+    {% endfor %}
+
+    y += 10;
+    doc.text("Recommended Action Plan:", 20, y);
+    y += 8;
+
+    {% for rec in result.recommendations %}
+    doc.setFont("helvetica", "bold");
+    doc.text(`Action: {{ rec.action }} [{{ rec.priority }}]`, 25, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Reason: {{ rec.reason }}`, 25, y);
+    y += 10;
+    {% endfor %}
+
+    doc.save(`SmartChurn_Report_{{ result.customer_id }}.pdf`);
+}
+</script>
+{% endblock %}

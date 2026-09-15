@@ -1,0 +1,40 @@
+{% extends 'churn/base.html' %}
+
+{% block title %}Sign In | SmartChurn AI{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-8 fade-in">
+    <div class="glass-panel rounded-2xl p-8 shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-500 to-purple-600"></div>
+        
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-gradient-to-br from-brand-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Sign In to SmartChurn</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter your credentials to access the churn dashboard</p>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Username or Email</label>
+                {{ form.username }}
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Password</label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2">
+                <span>Sign In to Dashboard</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-xs text-gray-500">
+            Don't have an account? <a href="{% url 'register' %}" class="text-brand-600 font-bold hover:underline">Register here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

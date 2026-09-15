@@ -1,0 +1,236 @@
+{% extends 'churn/base.html' %}
+
+{% block title %}Dashboard | SmartChurn Enterprise Platform{% endblock %}
+
+{% block content %}
+<div class="fade-in space-y-6">
+
+    <!-- Hero Greeting Header -->
+    <div class="glass-panel rounded-2xl p-6 sm:p-8 border-l-4 border-brand-500 bg-gradient-to-r from-white via-brand-50/30 to-purple-50/20 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Retention Analytics Dashboard</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Real-time telemetric customer churn diagnostics & ML predictions</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'predict' %}" class="px-5 py-2.5 bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center space-x-2 text-sm">
+                <i class="fas fa-magic"></i>
+                <span>Run New Analysis</span>
+            </a>
+            <a href="{% url 'csv_upload' %}" class="px-4 py-2.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition-all text-sm">
+                <i class="fas fa-upload mr-1"></i> Bulk CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Total Customers -->
+        <div class="glass-panel rounded-2xl p-5 flex items-center justify-between shadow-sm">
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Customers</p>
+                <h3 class="text-3xl font-black mt-1 text-gray-900 dark:text-white">{{ total_customers }}</h3>
+                <span class="text-[11px] text-gray-400 font-medium">Recorded profiles</span>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+
+        <!-- Total Predictions -->
+        <div class="glass-panel rounded-2xl p-5 flex items-center justify-between shadow-sm">
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Predictions</p>
+                <h3 class="text-3xl font-black mt-1 text-gray-900 dark:text-white">{{ total_predictions }}</h3>
+                <span class="text-[11px] text-gray-400 font-medium">Model inferences</span>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fas fa-robot"></i>
+            </div>
+        </div>
+
+        <!-- High Risk Count -->
+        <div class="glass-panel rounded-2xl p-5 flex items-center justify-between shadow-sm">
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">High Risk Churn</p>
+                <h3 class="text-3xl font-black mt-1 text-red-600 dark:text-red-400">{{ high_risk_count }}</h3>
+                <span class="text-[11px] text-red-500 font-medium"><i class="fas fa-arrow-up mr-1"></i>Requires intervention</span>
+            </div>
+            <div class="w-12 h-12 bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+        </div>
+
+        <!-- Overall Churn Rate -->
+        <div class="glass-panel rounded-2xl p-5 flex items-center justify-between shadow-sm">
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Churn Rate %</p>
+                <h3 class="text-3xl font-black mt-1 text-brand-600 dark:text-brand-400">{{ churn_rate_pct }}%</h3>
+                <span class="text-[11px] text-gray-400 font-medium">Avg Prob: {{ avg_churn_probability_pct }}%</span>
+            </div>
+            <div class="w-12 h-12 bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts & Alerts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Risk Distribution Chart -->
+        <div class="lg:col-span-2 glass-panel rounded-2xl p-6 flex flex-col min-h-[380px]">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                    <i class="fas fa-chart-pie text-brand-500 mr-2"></i> Churn Risk Distribution
+                </h3>
+                <span class="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">Live Model Telemetry</span>
+            </div>
+            <div class="flex-grow relative w-full flex items-center justify-center">
+                <canvas id="riskDoughnutChart" class="max-h-[280px]"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Alerts Widget -->
+        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+                <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white flex items-center">
+                    <i class="fas fa-bell text-amber-500 mr-2"></i> Recent Risk Alerts
+                </h3>
+                
+                <div class="space-y-3">
+                    {% for alert in recent_alerts %}
+                    <a href="{% url 'result_detail' alert.id %}" class="flex items-center justify-between p-3 bg-white dark:bg-gray-800/80 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-brand-300 transition-all shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-3 h-3 rounded-full {% if alert.risk_level == 'High' %}bg-red-500 animate-pulse{% elif alert.risk_level == 'Medium' %}bg-amber-500{% else %}bg-green-500{% endif %}"></div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 dark:text-gray-200">{{ alert.customer_id }}</p>
+                                <span class="text-[10px] text-gray-400">{{ alert.prediction_date|date:"M d, H:i" }}</span>
+                            </div>
+                        </div>
+                        <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg {% if alert.risk_level == 'High' %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300{% elif alert.risk_level == 'Medium' %}bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300{% else %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300{% endif %}">
+                            {% widthratio alert.churn_probability 1 100 %}% Risk
+                        </span>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-8 text-gray-400 text-xs">
+                        <i class="fas fa-inbox text-3xl mb-2 opacity-50 block"></i>
+                        No predictions generated yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <a href="{% url 'high_risk' %}" class="mt-4 w-full py-2.5 text-center text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 rounded-xl transition-colors border border-red-200 dark:border-red-800">
+                View All High Risk Accounts <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Secondary Segment Charts Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Contract Type Breakdown -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white flex items-center">
+                <i class="fas fa-file-contract text-purple-500 mr-2"></i> Customers by Contract Type
+            </h3>
+            <div class="h-64 relative flex items-center justify-center">
+                <canvas id="contractChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Payment Method Breakdown -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white flex items-center">
+                <i class="fas fa-credit-card text-emerald-500 mr-2"></i> Payment Method Distribution
+            </h3>
+            <div class="h-64 relative flex items-center justify-center">
+                <canvas id="paymentChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#cbd5e1' : '#475569';
+
+        // Risk Doughnut Chart
+        const riskCtx = document.getElementById('riskDoughnutChart').getContext('2d');
+        new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['High Risk (Churn)', 'Medium Risk', 'Low Risk (Retained)'],
+                datasets: [{
+                    data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: textColor, font: { family: 'Inter', weight: '600' } } }
+                },
+                cutout: '68%'
+            }
+        });
+
+        // Contract Bar Chart
+        const contractLabels = JSON.parse('{{ contract_labels_json|escapejs }}');
+        const contractCounts = JSON.parse('{{ contract_counts_json|escapejs }}');
+        const contractCtx = document.getElementById('contractChart').getContext('2d');
+        new Chart(contractCtx, {
+            type: 'bar',
+            data: {
+                labels: contractLabels,
+                datasets: [{
+                    label: 'Customers',
+                    data: contractCounts,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: textColor } },
+                    y: { ticks: { color: textColor } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // Payment Method Chart
+        const paymentLabels = JSON.parse('{{ payment_labels_json|escapejs }}');
+        const paymentCounts = JSON.parse('{{ payment_counts_json|escapejs }}');
+        const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+        new Chart(paymentCtx, {
+            type: 'bar',
+            data: {
+                labels: paymentLabels,
+                datasets: [{
+                    label: 'Customers',
+                    data: paymentCounts,
+                    backgroundColor: '#10b981',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: { ticks: { color: textColor } },
+                    y: { ticks: { color: textColor } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    });
+</script>
+{% endblock %}

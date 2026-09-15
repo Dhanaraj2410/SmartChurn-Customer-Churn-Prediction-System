@@ -1,0 +1,130 @@
+{% extends 'churn/base.html' %}
+
+{% block title %}Prediction History Log | SmartChurn AI{% endblock %}
+
+{% block content %}
+<div class="space-y-6 fade-in">
+
+    <!-- Header & Action Controls -->
+    <div class="glass-panel rounded-2xl p-6 border-l-4 border-brand-500 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold flex items-center">
+                <i class="fas fa-history text-brand-500 mr-3"></i> Historical Prediction Log
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Audit trail of all ML model inferences, probability distributions, and risk levels.
+            </p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a href="{% url 'export_csv' %}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center space-x-1.5">
+                <i class="fas fa-file-csv"></i>
+                <span>Export CSV</span>
+            </a>
+            <a href="{% url 'export_excel' %}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center space-x-1.5">
+                <i class="fas fa-file-excel"></i>
+                <span>Export Excel</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="glass-panel rounded-2xl p-4 shadow-sm">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+                <input type="text" name="q" value="{{ query }}" placeholder="Search Customer ID..." class="w-full rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+            <div>
+                <select name="risk" class="w-full rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-sm outline-none">
+                    <option value="">All Risk Levels</option>
+                    <option value="High" {% if risk_filter == 'High' %}selected{% endif %}>High Risk</option>
+                    <option value="Medium" {% if risk_filter == 'Medium' %}selected{% endif %}>Medium Risk</option>
+                    <option value="Low" {% if risk_filter == 'Low' %}selected{% endif %}>Low Risk</option>
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-sm transition-colors">
+                    Filter Log
+                </button>
+                <a href="{% url 'history' %}" class="py-2.5 px-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold rounded-xl text-sm" title="Reset">
+                    <i class="fas fa-redo"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- History Table -->
+    <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900/60 text-xs font-bold uppercase text-gray-500 tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4 text-left">Date / Time</th>
+                        <th class="px-6 py-4 text-left">Customer ID</th>
+                        <th class="px-6 py-4 text-left">Churn Probability</th>
+                        <th class="px-6 py-4 text-left">Risk Level</th>
+                        <th class="px-6 py-4 text-left">Model Version</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700/60 bg-white dark:bg-gray-800 text-sm">
+                    {% for item in page_obj %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                        <td class="px-6 py-4 text-xs font-medium text-gray-500 dark:text-gray-400">
+                            {{ item.prediction_date|date:"Y-m-d H:i" }}
+                        </td>
+                        <td class="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                            <a href="{% url 'result_detail' item.id %}" class="hover:text-brand-600">{{ item.customer_id }}</a>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-bold w-12">{% widthratio item.churn_probability 1 100 %}%</span>
+                                <div class="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="h-2 rounded-full {% if item.risk_level == 'High' %}bg-red-500{% elif item.risk_level == 'Medium' %}bg-amber-500{% else %}bg-green-500{% endif %}" style="width: {% widthratio item.churn_probability 1 100 %}%;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase {% if item.risk_level == 'High' %}badge-risk-high{% elif item.risk_level == 'Medium' %}badge-risk-medium{% else %}badge-risk-low{% endif %}">
+                                {{ item.risk_level }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-xs text-gray-400">{{ item.model_version }}</td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <a href="{% url 'result_detail' item.id %}" class="text-brand-600 hover:text-brand-800 font-bold text-xs" title="View Full Report">
+                                <i class="fas fa-file-alt"></i> Report
+                            </a>
+                            <form method="post" action="{% url 'delete_history' item.id %}" class="inline" onsubmit="return confirm('Delete this log record?');">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold p-1"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-400 text-sm">
+                            <i class="fas fa-history text-4xl mb-3 opacity-40 block"></i>
+                            No prediction history logs recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs font-bold text-gray-500">
+            <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+            <div class="flex space-x-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&risk={{ risk_filter }}" class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">Previous</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&risk={{ risk_filter }}" class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

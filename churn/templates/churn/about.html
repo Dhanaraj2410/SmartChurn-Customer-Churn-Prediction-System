@@ -1,0 +1,33 @@
+{% extends 'churn/base.html' %}
+
+{% block title %}About | SmartChurn AI System{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6 fade-in">
+    <div class="glass-panel rounded-2xl p-8 border-l-4 border-brand-500 space-y-4">
+        <h1 class="text-3xl font-extrabold">SmartChurn AI Platform</h1>
+        <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+            SmartChurn is an enterprise-grade Customer Churn Prediction and Retention Management web application rebuilt using Python, Django 5.1, Pandas, NumPy, Scikit-learn, and Chart.js.
+        </p>
+
+        <div class="pt-4 border-t border-gray-100 dark:border-gray-700 grid grid-cols-2 gap-4 text-xs font-semibold">
+            <div>
+                <span class="text-gray-400 block">Framework</span>
+                <span class="font-bold text-brand-600 text-sm">Django 5.1</span>
+            </div>
+            <div>
+                <span class="text-gray-400 block">ML Algorithm</span>
+                <span class="font-bold text-purple-600 text-sm">Random Forest Classifier</span>
+            </div>
+            <div>
+                <span class="text-gray-400 block">Database</span>
+                <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">SQLite / SQL Server ORM</span>
+            </div>
+            <div>
+                <span class="text-gray-400 block">API Framework</span>
+                <span class="font-bold text-emerald-600 text-sm">Django REST Framework</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
